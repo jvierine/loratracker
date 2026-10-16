@@ -1,4 +1,4 @@
-"""Reject flight recordings and files over 1 MiB in the proposed Git content."""
+"""Reject recordings and large files, with a bounded README screenshot exception."""
 import argparse
 from pathlib import Path
 import subprocess
@@ -26,7 +26,9 @@ def main():
         count+=1;largest=max(largest,(size,name))
         if path.suffix.lower() in FORBIDDEN or name.startswith(('telemetry-local/','recordings/','raw-recordings-external')):
             errors.append(name+': recording/local data is forbidden')
-        if size>1024*1024:errors.append(name+f': {size/1e6:.2f} MB exceeds the 1 MiB source limit')
+        # This exact screenshot was explicitly selected for the public README.
+        limit = 2*1024*1024 if name == 'docs/images/stratos-dashboard.png' else 1024*1024
+        if size>limit:errors.append(name+f': {size/1e6:.2f} MB exceeds the {limit//1024//1024} MiB source limit')
     if errors:
         print('\n'.join(errors),file=sys.stderr);return 1
     print(f'PASS: {count} Git source files; no recordings; largest {largest[1]} ({largest[0]/1024:.0f} KiB)')

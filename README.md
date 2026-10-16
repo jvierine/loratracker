@@ -4,6 +4,8 @@ Local Rust + WebAssembly + WebGL2 receiver for the Andøya RFM96 CanSat.
 RTL-SDR hardware access uses librtlsdr's C API directly from Rust. The native
 C++ LoRa demodulator receives the same live I/Q stream over a pipe. No GNU Radio.
 
+![STRATOS dashboard with radio spectrum, waterfall, raw I/Q, and decoded CanSat telemetry](docs/images/stratos-dashboard.png)
+
 ## Start the GUI
 
 Extract a software ZIP into a writable folder (do not run inside the ZIP).
@@ -46,7 +48,7 @@ Fresh installations default to `Documents/STRATOS/data`; this checkout retains
 its existing `recordings` directory when no other selection has been saved.
 
 Rustplotlib figures require **LaTeX + dvisvgm** in PATH, including the `preview`,
-`amsmath`, `amssymb`, `xcolor`, `newtxtext`, and `newtxmath` packages. Use
+`amsmath`, `amssymb`, and `mathpazo` packages. Use
 [TeX Live](https://www.tug.org/texlive/) (Linux/Windows),
 [MacTeX](https://www.tug.org/mactex/) (macOS), or
 [MiKTeX](https://miktex.org/) (Windows). Missing TeX affects plot rendering;
@@ -90,7 +92,8 @@ licenses and the small static coastline; **no flight recordings, raw voltage,
 local settings, plot caches or storage symlinks**. Conda and TeX are separate
 runtime prerequisites, not bundled installers. Git ignores data (`*.h5`, raw IQ),
 `telemetry-local`, storage symlinks, generated files, native binaries and ZIPs.
-The Git-content check rejects recording files and source files over **1 MiB**;
+The Git-content check rejects recording files and source files over **1 MiB**
+(the selected README screenshot has a **2 MiB** allowance);
 CI runs it before building Windows, Linux and macOS packages. These CI jobs must
 complete on their respective OS before treating those platform builds as tested.
 Do not force-add ignored data files. There are no Git commits containing flight

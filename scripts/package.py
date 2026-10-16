@@ -14,7 +14,7 @@ TOP = ['Cargo.toml','Cargo.lock','CMakeLists.txt','LICENSE','README.md','THIRD_P
 
 def sources():
     paths = [ROOT/name for name in TOP if (ROOT/name).is_file()]
-    for folder in ['src','scripts','vendor/lora','vendor/rustplotlib','web-ui','tools/flight-plots','web','.github']:
+    for folder in ['src','scripts','vendor/lora','vendor/rustplotlib','web-ui','tools/flight-plots','web','docs','.github']:
         for path in (ROOT/folder).rglob('*'):
             if not path.is_file() or path.is_symlink(): continue
             relative = path.relative_to(ROOT)
