@@ -3,6 +3,7 @@ import argparse
 import os
 from pathlib import Path
 import shutil
+import shlex
 import subprocess
 import sys
 
@@ -22,13 +23,18 @@ def native_environment():
     prefix = Path(env.get('HDF5_DIR', str(Path(sys.prefix)/'Library' if os.name == 'nt' else Path(sys.prefix))))
     env['HDF5_DIR'] = str(prefix)
     # Keep native linker options out of the WebAssembly build.
-    flags = env.get('RUSTFLAGS', '')
+    flags = env.get('CARGO_ENCODED_RUSTFLAGS', '').split('\x1f') if env.get('CARGO_ENCODED_RUSTFLAGS') else shlex.split(env.get('RUSTFLAGS', ''))
     if os.name != 'nt':
-        flags += f' -C link-arg=-Wl,-rpath,{prefix}/lib'
+        flags += ['-C', f'link-arg=-Wl,-rpath,{prefix}/lib']
         env['LIBRARY_PATH'] = str(prefix/'lib') + os.pathsep + env.get('LIBRARY_PATH', '')
+        # Release ZIPs can be unpacked under a different conda installation
+        # from the build runner. Resolve HDF5/libc++ from the user's runtime.
+        runtime_path = 'DYLD_LIBRARY_PATH' if sys.platform == 'darwin' else 'LD_LIBRARY_PATH'
+        env[runtime_path] = str(prefix/'lib') + os.pathsep + env.get(runtime_path, '')
     else:
         env['PATH'] = str(prefix/'bin') + os.pathsep + env['PATH']
-    env['RUSTFLAGS'] = flags.strip()
+    env.pop('RUSTFLAGS', None)
+    env['CARGO_ENCODED_RUSTFLAGS'] = '\x1f'.join(flags)
     return env
 
 def build(wasm=False):
@@ -52,7 +58,7 @@ def build(wasm=False):
     for name in ['lora_rx', 'lora_tx_gen']:
         install_copy(ROOT/'bin'/(name+EXE), ROOT/'build'/(name+EXE))
     if wasm or not (ROOT/'web/pkg/station_display_bg.wasm').exists():
-        wasm_env = env.copy(); wasm_env.pop('RUSTFLAGS', None)
+        wasm_env = env.copy(); wasm_env.pop('RUSTFLAGS', None); wasm_env.pop('CARGO_ENCODED_RUSTFLAGS', None)
         subprocess.run(['rustup', 'target', 'add', 'wasm32-unknown-unknown'], env=wasm_env, check=True)
         subprocess.run(['cargo', 'build', '--locked', '--release', '--target', 'wasm32-unknown-unknown', '-p', 'station-display'], env=wasm_env, check=True)
         subprocess.run(['wasm-bindgen', 'target/wasm32-unknown-unknown/release/station_display.wasm', '--target', 'web', '--out-dir', 'web/pkg'], env=wasm_env, check=True)

@@ -4,11 +4,102 @@ Local Rust + WebAssembly + WebGL2 receiver for the Andøya RFM96 CanSat.
 RTL-SDR hardware access uses librtlsdr's C API directly from Rust. The native
 C++ LoRa demodulator receives the same live I/Q stream over a pipe. No GNU Radio.
 
-Open http://127.0.0.1:8096 after `./run.sh`. Build with `./scripts/build.sh`.
-Requires librtlsdr (`brew install librtlsdr`), Rust with the wasm32-unknown-unknown
-target, wasm-bindgen-cli 0.2.129, and the base conda HDF5 library. The build script
-uses the base conda environment to locate HDF5. Python utilities use
-`conda run -n base python ...`.
+## Start the GUI
+
+Extract a software ZIP into a writable folder (do not run inside the ZIP).
+Install [Miniconda](https://docs.anaconda.com/miniconda/) and run `setup.sh`
+(macOS/Linux) or `setup.bat` from an Anaconda/Miniconda prompt (Windows).
+The setup scripts install the Python/HDF5 runtime into conda **base** by default.
+Set `STRATOS_ENV` to use a different conda environment.
+
+| System | Start |
+| --- | --- |
+| Windows | Double-click `start-gui.bat` |
+| macOS | Double-click `start-gui.command` |
+| Linux | Run `./start-gui.sh` |
+
+The launcher opens **http://127.0.0.1:8096/** in the default browser. Keep its
+terminal open; Ctrl+C stops the backend and plot helper. The default mode is
+**recorded-data review** and does not open the SDR or record new I/Q.
+To acquire live data, run the same launcher with `--live`.
+`./run.sh` remains a compatibility entry point.
+
+The **Data directory** control in the GUI accepts a path or opens a native
+folder chooser with **Browse…**. Press **Use directory** to apply it. The
+selection persists in local `settings.json`. Review reads `flight-*.h5` packet
+logs from that directory; live operation writes telemetry and 4 MB raw-I/Q
+segments there. Changing the directory rotates recording files without retuning
+or restarting the decoder. A missing/unmounted directory produces an error;
+there is no fallback to another disk. Existing files are never moved or deleted.
+Computed plots and HDF5 analysis products live in `build/`, so reviewing a
+read-only recording directory is supported.
+
+You can also select the folder at launch:
+
+```sh
+./start-gui.sh --data-dir "/path/with spaces/flight"
+./start-gui.sh --live --data-dir "/path/to/external-disk/flight"
+```
+
+On Windows use `start-gui.bat --data-dir "E:\CanSat\flight"`.
+Fresh installations default to `Documents/STRATOS/data`; this checkout retains
+its existing `recordings` directory when no other selection has been saved.
+
+Rustplotlib figures require **LaTeX + dvisvgm** in PATH, including the `preview`,
+`amsmath`, `amssymb`, `xcolor`, `newtxtext`, and `newtxmath` packages. Use
+[TeX Live](https://www.tug.org/texlive/) (Linux/Windows),
+[MacTeX](https://www.tug.org/mactex/) (macOS), or
+[MiKTeX](https://miktex.org/) (Windows). Missing TeX affects plot rendering;
+telemetry review and live recording do not depend on TeX.
+
+Native ZIPs contain the station and plotter for the OS/CPU in their filename.
+A **source ZIP** additionally needs [Rust](https://rustup.rs/) and a C/C++
+compiler: Xcode Command Line Tools on macOS, GCC/Clang on Linux, or Visual Studio
+Build Tools with **Desktop development with C++** on Windows. The launcher builds
+missing native binaries automatically. To rebuild explicitly:
+
+```sh
+conda run --no-capture-output -n base python scripts/build.py
+```
+
+Browser WebAssembly assets are included in ZIPs. A fresh Git checkout must build
+them using `scripts/build.py --wasm`; install `wasm-bindgen-cli` **0.2.129** with
+`cargo install wasm-bindgen-cli --version 0.2.129 --locked` first.
+Rustplotlib is bundled as a small MIT-licensed source snapshot in
+`vendor/rustplotlib`; no developer-specific path or separate checkout is needed.
+
+Live mode dynamically loads [librtlsdr](https://osmocom.org/projects/rtl-sdr/wiki/Rtl-sdr)
+through its C API. Review requires no SDR driver. Install librtlsdr through
+Homebrew (`brew install librtlsdr`), your Linux package manager (for example
+`sudo apt install librtlsdr0`), or an appropriate Windows RTL-SDR distribution
+and USB driver. On Windows put `rtlsdr.dll` and its matching dependency DLLs on
+PATH. `RTLSDR_LIBRARY` can specify a full shared-library path on any OS. Linux
+also needs the RTL-SDR USB permissions/udev rules. The native demodulator consumes
+I/Q from the Rust process and does not open the USB device itself.
+
+## Software packages and Git
+
+```sh
+conda run -n base python scripts/package.py             # source + browser assets
+conda run -n base python scripts/package.py --binaries  # current OS/CPU binaries
+conda run -n base python scripts/check_git_content.py
+```
+
+ZIPs are written to `dist/` with a SHA-256 file manifest. They contain software,
+licenses and the small static coastline; **no flight recordings, raw voltage,
+local settings, plot caches or storage symlinks**. Conda and TeX are separate
+runtime prerequisites, not bundled installers. Git ignores data (`*.h5`, raw IQ),
+`telemetry-local`, storage symlinks, generated files, native binaries and ZIPs.
+The Git-content check rejects recording files and source files over **1 MiB**;
+CI runs it before building Windows, Linux and macOS packages. These CI jobs must
+complete on their respective OS before treating those platform builds as tested.
+Do not force-add ignored data files. There are no Git commits containing flight
+data in this initial repository.
+
+`conda run -n base python scripts/test_portable.py` exercises directory switching,
+exact stored-payload reading/downloads, settings persistence, review-only mode,
+missing-drive rejection, graceful shutdown, and synthetic native LoRa decoding.
+It uses temporary synthetic HDF5 files and needs no receiver hardware.
 
 ## Live operation
 
@@ -40,7 +131,8 @@ The analysis artifact is `recordings/air-verification.h5`.
 
 ## Recording format
 
-Telemetry recording starts automatically. Files are in `recordings/flight-*.h5`.
+In live mode, telemetry recording follows the recording control. Files are in the
+selected data directory as `flight-*.h5`. Review mode never records.
 Recordings are local; nothing is uploaded. Stop recording before downloading
 or reading a currently active file. Ctrl-C shuts the server down and closes HDF5.
 
@@ -56,7 +148,7 @@ Each decoded candidate is saved BEFORE display filtering, including bad CRCs:
   tuner center Hz, AGC flag, requested manual gain dB, PPM correction.
 - File attributes describe sample rate, encoding, initial configuration and schema.
 
-Raw I/Q recording costs about 240 MB/min. It is ON by default and independent of telemetry logging. It rotates into `iq-SESSION-SEQUENCE.h5` files with exactly 4,000,000 IQ bytes each (2,000,000 complex samples, one second at 2 MS/s), plus HDF5 metadata. A stopped recording or hardware-setting change can finish a shorter segment. Each segment stores start UTC, exact sample indices, rate, tuning, AGC/manual gain, complete/partial state, known dropped-sample gaps, and generation changes with unknown USB discontinuities. Files are never overwritten or automatically deleted. Read completed segments while recording continues. The first 16 files and a recent six-file sequence were verified to have exactly continuous indices and 4 MB payloads. It preserves the
+Raw I/Q recording costs about 240 MB/min. In live mode its control is independent of telemetry recording and independent of telemetry logging. It rotates into `iq-SESSION-SEQUENCE.h5` files with exactly 4,000,000 IQ bytes each (2,000,000 complex samples, one second at 2 MS/s), plus HDF5 metadata. A stopped recording or hardware-setting change can finish a shorter segment. Each segment stores start UTC, exact sample indices, rate, tuning, AGC/manual gain, complete/partial state, known dropped-sample gaps, and generation changes with unknown USB discontinuities. Files are never overwritten or automatically deleted. Read completed segments while recording continues. The first 16 files and a recent six-file sequence were verified to have exactly continuous indices and 4 MB payloads. It preserves the
 waveform for changing the demodulator later; payload_bytes preserves the current
 demodulator's byte decisions. Neither is equivalent to the transmitter's original
 bytes when reception is corrupted. No-CRC messages remain unverified even if their
@@ -80,7 +172,9 @@ the received bytes using `conda run -n base python scripts/upgrade_recording.py 
 
 ## Andøya source
 
-The official library and example sketches are cached in `reference/andoya/`.
+The official library download is documented in `reference/andoya/sources.json`.
+A local downloaded copy may be present in `reference/andoya/Cansat_RFM96/`; it is
+excluded from Git and the software packages.
 `sources.json` records the download URL and SHA-256. The library confirms BW 62.5
 kHz, SF7, CR 4/5 defaults. Its constructor encodes frequency_kHz − 420000 in the
 first two little-endian payload bytes. Its `setModem` leaves payload CRC disabled.
@@ -129,7 +223,7 @@ The receiver's 2 MHz window covers the two configured frequencies simultaneously
 this is not exhaustive simultaneous detection of arbitrary unknown carrier centers.
 A caffeinate process inhibits idle system sleep for the running server.
 
-Live plots use the local `/Users/jvi019/src/rustplotlib` crate through
+Plots use the bundled `vendor/rustplotlib` crate through
 `tools/flight-plots`. Build with `cargo build --release --manifest-path
 tools/flight-plots/Cargo.toml`. `run.sh` starts the independent history/plot helper;
 it can also be started with `conda run --no-capture-output -n base python
@@ -155,7 +249,7 @@ only full-window support. The structure functions average squared increments
 in actual-time logarithmic lag bins from 2–300 s with at least 10 pairs per bin;
 solid curves use cleaned rho and dashed curves use rho prime. Pairs never cross
 segment boundaries. This does not establish a turbulence model or compensate
-for changing balloon position/ascent. HDF5 products on Expansion preserve the
+for changing balloon position/ascent. HDF5 products in the application `build/` cache preserve the
 MSIS pressure/height profile and the derived samples, pair counts, outlier masks,
 and method description. `web/map-data` JSON files are disposable GUI caches;
 original packet bytes and raw I/Q remain in their existing HDF5 recordings.
