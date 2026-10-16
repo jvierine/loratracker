@@ -14,7 +14,7 @@ TOP = ['Cargo.toml','Cargo.lock','CMakeLists.txt','LICENSE','README.md','THIRD_P
 
 def sources():
     paths = [ROOT/name for name in TOP if (ROOT/name).is_file()]
-    for folder in ['src','scripts','vendor/lora','vendor/rustplotlib','web-ui','tools/flight-plots','web','docs','.github']:
+    for folder in ['src','scripts','vendor/lora','vendor/rustplotlib','web-ui','tools/flight-plots','tools/storage-picker','web','docs','.github']:
         for path in (ROOT/folder).rglob('*'):
             if not path.is_file() or path.is_symlink(): continue
             relative = path.relative_to(ROOT)
@@ -36,10 +36,12 @@ def main():
     if not (ROOT/'web/pkg/station_display_bg.wasm').is_file(): raise SystemExit('Build the browser assets before packaging: scripts/build.py --wasm')
     if args.binaries:
         exe = '.exe' if os.name == 'nt' else ''
-        for binary in ['balloon-station','flight-plots','lora_rx','lora_tx_gen']:
+        for binary in ['balloon-station','flight-plots','storage-picker','lora_rx','lora_tx_gen']:
             path = ROOT/'bin'/(binary+exe)
             if not path.is_file(): raise SystemExit(f'Missing {path}; run scripts/build.py first')
             files.append(path)
+        if platform.system()=='Darwin':
+            files.extend(path for path in (ROOT/'bin/STRATOS Folder Picker.app').rglob('*') if path.is_file())
     output = ROOT/'dist'/(name+'.zip'); output.parent.mkdir(exist_ok=True)
     manifest = {'version':VERSION,'platform':label,'note':'Software only. Flight recordings, settings, symlinks and generated plot/history caches are excluded. Conda runtime and TeX are installed separately; see README.md.','sha256':{path.relative_to(ROOT).as_posix():hashlib.sha256(path.read_bytes()).hexdigest() for path in files}}
     with zipfile.ZipFile(output,'w',zipfile.ZIP_DEFLATED,compresslevel=9) as archive:

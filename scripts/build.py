@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import shutil
 import shlex
+import plistlib
 import subprocess
 import sys
 
@@ -50,10 +51,16 @@ def build(wasm=False):
     run(['cmake', '--install', 'build/native', '--config', 'Release', '--prefix', str(ROOT/'build/install')])
     for name in ['lora_rx', 'lora_tx_gen']:
         install_copy(ROOT/'build/install/bin'/(name+EXE), ROOT/'bin'/(name+EXE))
-    run(['cargo', 'build', '--locked', '--release', '-p', 'balloon-station'])
+    run(['cargo', 'build', '--locked', '--release', '-p', 'balloon-station', '-p', 'storage-picker'])
     run(['cargo', 'build', '--locked', '--release', '--manifest-path', 'tools/flight-plots/Cargo.toml'])
-    for source, name in [(ROOT/'target/release'/('balloon-station'+EXE), 'balloon-station'), (ROOT/'tools/flight-plots/target/release'/('flight-plots'+EXE), 'flight-plots')]:
+    for source, name in [(ROOT/'target/release'/('balloon-station'+EXE), 'balloon-station'), (ROOT/'target/release'/('storage-picker'+EXE), 'storage-picker'), (ROOT/'tools/flight-plots/target/release'/('flight-plots'+EXE), 'flight-plots')]:
         install_copy(source, ROOT/'bin'/(name+EXE))
+    if sys.platform == 'darwin':
+        contents=ROOT/'bin/STRATOS Folder Picker.app/Contents'
+        (contents/'MacOS').mkdir(parents=True,exist_ok=True)
+        install_copy(ROOT/'bin/storage-picker',contents/'MacOS/storage-picker')
+        with open(contents/'Info.plist','wb') as info:
+            plistlib.dump({'CFBundleIdentifier':'org.stratos.folder-picker','CFBundleName':'STRATOS Folder Picker','CFBundleExecutable':'storage-picker','CFBundlePackageType':'APPL','CFBundleVersion':'1','LSUIElement':False,'NSHighResolutionCapable':True},info)
     # Preserve the command-line replay/test tools' existing locations.
     for name in ['lora_rx', 'lora_tx_gen']:
         install_copy(ROOT/'bin'/(name+EXE), ROOT/'build'/(name+EXE))

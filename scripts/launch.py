@@ -47,7 +47,7 @@ def main():
             raise RuntimeError('Run setup.sh / setup.bat to install the Python runtime dependencies.') from error
     backend = ROOT/'bin'/('balloon-station'+EXE)
     plotter = ROOT/'bin'/('flight-plots'+EXE)
-    if args.build or not backend.exists() or not plotter.exists(): build()
+    if args.build or not backend.exists() or not plotter.exists() or not (ROOT/'bin'/('storage-picker'+EXE)).exists(): build()
     (ROOT/'build').mkdir(exist_ok=True)
     data_dir = args.data_dir.expanduser().resolve() if args.data_dir else None
     settings = ROOT/'settings.json'

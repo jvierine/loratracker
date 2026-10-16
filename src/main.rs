@@ -224,7 +224,6 @@ struct Recorder {
 }
 impl Recorder {
     fn open(cfg: &Config) -> hdf5::Result<Self> {
-        std::fs::create_dir_all(&cfg.data_dir).ok();
         let path = Path::new(&cfg.data_dir).join(format!("flight-{:.0}.h5", now() * 1000.)).to_string_lossy().into_owned();
         let file = hdf5::File::create(&path)?;
         close_on_exec(&file);
@@ -915,11 +914,10 @@ async fn recordings(State(a): State<App>) -> Json<Value> {
     }
     Json(json!(v))
 }
-fn prepare_data_dir(value: &str, review: bool) -> Result<String, String> {
+fn prepare_data_dir(value: &str, _review: bool) -> Result<String, String> {
     if value.trim().is_empty() { return Err("Choose a data directory".into()); }
     let path = PathBuf::from(value);
     // Selecting a missing external drive must fail; never silently fall back.
-    if !review { std::fs::create_dir_all(&path).map_err(|e| e.to_string())?; }
     if !path.is_dir() { return Err("Data directory does not exist or is not mounted".into()); }
     let path = path.canonicalize().map_err(|e| e.to_string())?;
     Ok(path.to_string_lossy().into_owned())
@@ -954,10 +952,16 @@ async fn recording_file(State(a): State<App>, UrlPath(name): UrlPath<String>) ->
     Ok(axum::response::Response::builder().header("Content-Type","application/x-hdf5")
         .body(axum::body::Body::from_stream(tokio_util::io::ReaderStream::new(file))).unwrap())
 }
-async fn browse_directory(State(a): State<App>) -> Result<Json<Value>, (axum::http::StatusCode, String)> {
+async fn browse_directory(State(a): State<App>, Json(_): Json<Value>) -> Result<Json<Value>, (axum::http::StatusCode, String)> {
     let current = a.cfg.lock().unwrap().data_dir.clone();
-    let python = std::env::var_os("STATION_PYTHON").ok_or_else(|| (axum::http::StatusCode::SERVICE_UNAVAILABLE,"Start using the GUI launch script to enable Browse; you can also enter a path.".into()))?;
-    let output = tokio::process::Command::new(python).args(["scripts/directory_picker.py", &current]).output().await
+    let picker = PathBuf::from(if cfg!(windows) {"bin/storage-picker.exe"} else if cfg!(target_os="macos") {"bin/STRATOS Folder Picker.app/Contents/MacOS/storage-picker"} else {"bin/storage-picker"});
+    let mut command = if picker.is_file() {
+        let mut cmd=tokio::process::Command::new(picker);cmd.arg(&current);cmd
+    } else {
+        let python = std::env::var_os("STATION_PYTHON").ok_or_else(|| (axum::http::StatusCode::SERVICE_UNAVAILABLE,"Start using the GUI launch script to enable Browse; you can also enter a path.".into()))?;
+        let mut cmd=tokio::process::Command::new(python);cmd.args(["scripts/directory_picker.py", &current]);cmd
+    };
+    let output = command.output().await
         .map_err(|e| (axum::http::StatusCode::SERVICE_UNAVAILABLE,e.to_string()))?;
     if !output.status.success() { return Err((axum::http::StatusCode::SERVICE_UNAVAILABLE,String::from_utf8_lossy(&output.stderr).into_owned())); }
     let value = serde_json::from_slice(&output.stdout).map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR,e.to_string()))?;

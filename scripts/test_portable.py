@@ -15,8 +15,8 @@ from build import ROOT, EXE, native_environment
 
 def main():
     with tempfile.TemporaryDirectory(prefix='STRATOS test ') as temp:
-        root = Path(temp); first = root/'data one'; second = root/'data two'; first.mkdir(); second.mkdir()
-        packet = bytes.fromhex('bc340d007d978a42583f8041000006590c893476d2c147134e48cf')
+        root = Path(temp); first = root/'data one Å'; second = root/'data two'; first.mkdir(); second.mkdir()
+        packet = struct.pack('<HHffhB', 13500, 13, 0., 0., 0, 0) + bytes(4) + struct.pack('<f', 100000.) + bytes(4)
         meta = {'utc':1000., 'frequency_hz':433500000, 'payload_hex':packet.hex(), 'sf':12, 'bandwidth_hz':62500, 'has_crc':False, 'crc_valid':None, 'snr_db':10.}
         with h5py.File(first/'flight-fixture.h5', 'w') as file:
             file.create_dataset('packets_json', data=[json.dumps(meta)], dtype=h5py.string_dtype())

@@ -27,7 +27,7 @@ To acquire live data, run the same launcher with `--live`.
 `./run.sh` remains a compatibility entry point.
 
 The **Data directory** control in the GUI accepts a path or opens a native
-folder chooser with **Browse…**. Press **Use directory** to apply it. The
+folder chooser with **Browse…** (bundled native picker; no Tkinter needed). Press **Use directory** to apply it. The
 selection persists in local `settings.json`. Review reads `flight-*.h5` packet
 logs from that directory; live operation writes telemetry and 4 MB raw-I/Q
 segments there. Changing the directory rotates recording files without retuning

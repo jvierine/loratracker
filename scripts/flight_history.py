@@ -3,7 +3,7 @@ import os,json,time,struct,math,shutil,datetime,subprocess,traceback
 from pathlib import Path
 import h5py,numpy as np,pymsis
 from pressure_analysis import analyse
-from plot_view_server import start,render
+from plot_view_server import start,render,view_lock
 ROOT=Path(__file__).resolve().parents[1]
 os.chdir(ROOT)
 OUT=ROOT/'web/map-data';OUT.mkdir(exist_ok=True)
@@ -43,6 +43,14 @@ def read_history(status):
     directory=Path(status['config']['data_dir'])
     if loaded_dir==directory:return
     seen.clear();errors.clear();loaded_dir=directory
+    # View limits from another flight must not hide the newly selected data.
+    views_path=OUT/'views.json'
+    with view_lock:
+        views=json.loads(views_path.read_text()) if views_path.exists() else {}
+        if views.get('data_dir')!=str(directory):
+            views={k:v for k,v in views.items() if k in ('visible_hz','raw_structure','prime_structure')}
+            views['data_dir']=str(directory)
+            tmp=OUT/'views.tmp';tmp.write_text(json.dumps(views));tmp.replace(views_path)
     active_path=status['status'].get('recording');active=Path(active_path) if active_path else None
     for path in sorted(directory.glob('flight-*.h5')):
         source=path
