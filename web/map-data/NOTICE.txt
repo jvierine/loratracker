@@ -1,0 +1,7 @@
+Coastline: Natural Earth 1:10m land, public domain, https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_land.geojson . Cropped to -30..65 E, 45..85 N. All map and trace figures rendered with local rustplotlib.
+
+Portable bundle: coastline coordinate precision is limited to five decimal places;
+rings are simplified at approximately 11 m tolerance near 69.3 N to keep this
+public-domain background asset below 1 MiB. Telemetry coordinates are unaffected.
+Background extent: 20 W–50 E, 55–82 N. Plot axes and packet positions are not
+clipped to this background extent; outside it, tracks render without coastlines.

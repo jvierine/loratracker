@@ -1,0 +1,10 @@
+[package]
+name = "flight-plots"
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0-only"
+[workspace]
+[dependencies]
+rustplotlib = { path = "../../vendor/rustplotlib", default-features = false }
+serde_json = "1"
+anyhow = "1"

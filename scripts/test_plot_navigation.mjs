@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {zoomLimits} from '../web/plot-navigation.mjs';
+const a={xlim:[0,100],ylim:[-20,20],points:[[10,0],[20,0],[80,5]]};
+const z=zoomLimits(a,.4,.1,0,false);
+assert(z.ylim[0]<0&&z.ylim[1]>0,'time zoom must keep flat observations visible');
+const gap=zoomLimits(a,.01,.5,.5,false);
+assert(a.points.some(p=>p[0]>=gap.xlim[0]&&p[0]<=gap.xlim[1]));
+const map=zoomLimits({...a,points:[[10,10]]},.1,.8,.1,true);
+assert(map.xlim[0]<=10&&map.xlim[1]>=10&&map.ylim[0]<=10&&map.ylim[1]>=10);
+assert.deepEqual(a.xlim,[0,100]);
+console.log('Zoom checks passed: flat trace, gaps, map bounds, immutable inputs.');

@@ -1,0 +1,11 @@
+[package]
+name = "station-display"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+[lib]
+crate-type = ["cdylib"]
+[dependencies]
+wasm-bindgen = "=0.2.129"
+js-sys = "0.3"
+web-sys = {version = "0.3", features = ["Window", "Document", "HtmlCanvasElement", "WebGl2RenderingContext", "WebGlProgram", "WebGlShader", "WebGlBuffer", "WebGlTexture", "WebGlUniformLocation"]}

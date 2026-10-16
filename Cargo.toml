@@ -1,0 +1,21 @@
+[workspace]
+members = [".", "web-ui"]
+resolver = "2"
+[package]
+name = "balloon-station"
+version = "0.1.0"
+edition = "2021"
+description = "RTL-SDR LoRa balloon tracker with a local WebAssembly dashboard and HDF5 recording"
+license = "GPL-3.0-only"
+repository = "https://github.com/jvierine/loratracker"
+[dependencies]
+axum = { version = "0.8", features = ["ws"] }
+tokio = { version = "1", features = ["full"] }
+tower-http = { version = "0.6", features = ["fs"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+libloading = "0.8"
+tokio-util = { version = "0.7", features = ["io"] }
+rustfft = "6"
+hdf5 = { package = "hdf5-metno", version = "0.14" }
+ndarray = "0.17"

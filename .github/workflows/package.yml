@@ -1,0 +1,43 @@
+name: Build and package
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: conda-incubator/setup-miniconda@v4
+        with:
+          activate-environment: ""
+          auto-activate: true
+          miniforge-version: latest
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Runtime and build dependencies
+        run: |
+          conda env update -n base -f environment.yml
+          cargo install wasm-bindgen-cli --version 0.2.129 --locked
+      - name: Reject data blobs in Git
+        run: conda run -n base python scripts/check_git_content.py
+      - name: Build native applications and WebAssembly
+        run: conda run --no-capture-output -n base python scripts/build.py --wasm
+      - name: Test review and native decode without SDR hardware
+        run: conda run --no-capture-output -n base python scripts/test_portable.py
+      - name: Package software only
+        run: |
+          conda run -n base python scripts/package.py --binaries
+          conda run -n base python scripts/package.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stratos-${{ matrix.os }}
+          path: dist/*.zip

@@ -1,0 +1,21 @@
+{
+  "upstream": "https://github.com/jvierine/rustplotlib",
+  "base_commit": "b493bae51b12b819975a01e070fb35606b06b733",
+  "note": "Exact local source snapshot including uncommitted changes; hashes are authoritative. MIT license retained.",
+  "sha256": {
+    "Cargo.toml": "b33049b213d59fd82249acf07ee4404da59b185d38cfbe76579a06490b655c57",
+    "LICENSE": "8caf8378192cab6a43136ff3ec045725ade812bb9f93b24819fb3fab8caed7c6",
+    "src/article.rs": "de515bb85e3e0a8babca8c95bda279fdbee43f904b95e3c61ab91f671ca689db",
+    "src/cartography.rs": "6c76802019eb54db715f77b05f2253f0afb62cf9c6bf54f14fa79185add0e38c",
+    "src/color.rs": "c41a3f99d36ccc949b3ba4234b2fa54dc337c2fc73d966c40029ac433101a221",
+    "src/figure.rs": "b38cade749732118234658939cd52241369d08b79046aefcca2160f4dc351263",
+    "src/latex.rs": "d0f6d1b62080ae549f2b596f7eaee5a010aec343be81ba13aed1ccda8297bd96",
+    "src/legend.rs": "138db34db5dc683fc0b8c890c4a3dae28d102a7a9de0f738a3e47355ea00ddf8",
+    "src/lib.rs": "80d98a03f0b4152dcb602f17f357d764c82bebad27745eba0c99ad669f6c9e4c",
+    "src/markers.rs": "601d4fbf202d55a0f51454c6998ac6bc45b2cd5a91dc0cb0c539bb78e5ad22d2",
+    "src/palettes.rs": "7e7887bc1f58f0ec3dcf61b9cfc6abd92c13b8ccc1165edca7b1d32e0834f950",
+    "src/surface.rs": "bfec00e0fcfa184e4cc9152cee7f5e54b7d0c41587e5a5b9916f5a9b8f4296eb",
+    "src/volume.rs": "c7c027d3b8a01a56b926f6b1b152025b07a607d88f2ba600e36475e4bc95b0b8",
+    "src/web_layout.rs": "cade844cb9f595baeef50e8ed566884fd62596ca0ffd9df2ef8515bf57c4d9b7"
+  }
+}
